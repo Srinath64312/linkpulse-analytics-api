@@ -1,242 +1,517 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shortly • Production URL Shortener & Analytics API</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>LinkPulse • Enterprise URL Shortener & Telemetry Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Chart.js for interactive analytics charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="app-layout">
-    <!-- Header -->
+    <!-- Navbar Header -->
     <header class="navbar">
       <div class="brand">
-        <span class="brand-icon">⚡</span>
+        <div class="brand-logo-container">
+          <div class="pulse-ring"></div>
+          <span class="brand-icon">⚡</span>
+        </div>
         <div class="brand-text">
-          <h1>Shortly<span class="badge">API v1.0</span></h1>
-          <p>Production URL Shortener & Real-Time Analytics</p>
+          <div class="brand-title-row">
+            <h1>LinkPulse</h1>
+            <span class="badge badge-pulse">v1.2 • FDE Engine</span>
+          </div>
+          <p>Production URL Shortener, Analytics Pipeline & Telemetry</p>
         </div>
       </div>
+
       <div class="nav-actions">
-        <a href="/health" target="_blank" class="nav-btn health-badge" id="healthBtn">
-          <span class="status-dot"></span> System Health
+        <!-- Live System Health Badge -->
+        <a href="/health" target="_blank" class="nav-btn health-badge" id="healthBtn" title="View live system telemetry">
+          <span class="status-dot"></span>
+          <span id="healthStatusText">System Live</span>
         </a>
-        <div id="authHeaderState">
+
+        <!-- Theme Toggle -->
+        <button class="nav-icon-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+          <span id="themeIcon">☀️</span>
+        </button>
+
+        <!-- Auth Header State -->
+        <div id="authHeaderState" class="auth-btn-group">
           <button class="nav-btn btn-secondary" onclick="openAuthModal('login')">Sign In</button>
-          <button class="nav-btn btn-primary" onclick="openAuthModal('register')">Sign Up</button>
+          <button class="nav-btn btn-primary" onclick="openAuthModal('register')">Get Started</button>
         </div>
       </div>
     </header>
 
-    <!-- Main Content Container -->
-    <main class="main-container">
-      <!-- Hero / Shortener Input Box -->
-      <section class="card shortener-card">
-        <div class="card-header">
-          <h2>Create Short Link</h2>
-          <p>Generate compact URLs with analytics tracking and QR codes.</p>
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="shortener" onclick="switchTab('shortener')">
+        <span class="tab-icon">✨</span> Shortener Studio
+      </button>
+      <button class="tab-btn" data-tab="analytics" onclick="switchTab('analytics')">
+        <span class="tab-icon">📊</span> Real-Time Analytics
+      </button>
+      <button class="tab-btn" data-tab="links" onclick="switchTab('links')">
+        <span class="tab-icon">🔗</span> My Links Hub <span class="tab-counter hidden" id="myLinksCount">0</span>
+      </button>
+      <button class="tab-btn" data-tab="api-docs" onclick="switchTab('api-docs')">
+        <span class="tab-icon">⚡</span> API Playground & Docs
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+      <!-- ================= TAB 1: SHORTENER STUDIO ================= -->
+      <section id="tab-shortener" class="tab-pane active">
+        <div class="card shortener-card">
+          <div class="card-header">
+            <div class="header-tag">HIGH-THROUGHPUT ENGINE</div>
+            <h2>Create Smart Short Link</h2>
+            <p>Generate compact, trackable links with vanity slugs, QR codes, and sub-millisecond 302 redirects.</p>
+          </div>
+
+          <form id="shortenForm" class="shorten-form">
+            <div class="form-row">
+              <div class="input-group flex-1">
+                <label for="originalUrl">
+                  <span>Destination Long URL</span>
+                  <span class="label-req">* Required</span>
+                </label>
+                <div class="input-with-icon">
+                  <span class="field-icon">🌐</span>
+                  <input 
+                    type="url" 
+                    id="originalUrl" 
+                    placeholder="https://github.com/Srinath64312/campus-student-marketplace" 
+                    required 
+                    autocomplete="off"
+                  />
+                  <button type="button" class="input-action-btn" onclick="pasteFromClipboard('originalUrl')" title="Paste from clipboard">📋 Paste</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row grid-3">
+              <div class="input-group">
+                <label for="customAlias">
+                  <span>Custom Alias / Vanity Slug</span>
+                  <span class="label-sub">Optional</span>
+                </label>
+                <div class="alias-input-wrapper">
+                  <span class="domain-prefix">linkpulse/</span>
+                  <input 
+                    type="text" 
+                    id="customAlias" 
+                    placeholder="campus-market" 
+                    pattern="[a-zA-Z0-9-_]+"
+                    title="Only alphanumeric characters, dashes, and underscores allowed"
+                  />
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="expiresInDays">
+                  <span>Link Expiration</span>
+                  <span class="label-sub">Auto-sunset</span>
+                </label>
+                <div class="select-wrapper">
+                  <select id="expiresInDays">
+                    <option value="">Never Expires (Permanent)</option>
+                    <option value="1">1 Day (High Urgency)</option>
+                    <option value="7">7 Days (Weekly Campaign)</option>
+                    <option value="30">30 Days (Monthly)</option>
+                    <option value="90">90 Days (Quarterly)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="urlTitle">
+                  <span>Campaign / Link Title</span>
+                  <span class="label-sub">For dashboard</span>
+                </label>
+                <input type="text" id="urlTitle" placeholder="e.g. Student Marketplace v2" />
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg" id="shortenSubmitBtn">
+              <span class="btn-text">⚡ Generate Trackable Short Link</span>
+            </button>
+          </form>
+
+          <!-- Result Preview Box -->
+          <div id="shortenResult" class="shorten-result hidden">
+            <div class="result-banner">
+              <span class="badge-success">✨ Link Created & Indexed in MongoDB</span>
+            </div>
+            <div class="result-box">
+              <div class="result-left">
+                <div class="short-url-row">
+                  <a id="shortLinkOutput" href="#" target="_blank" class="short-url-link"></a>
+                  <button class="copy-chip-btn" onclick="copyShortLink()" id="quickCopyBtn">
+                    <span id="copyIcon">📋</span> <span id="copyLabel">Copy</span>
+                  </button>
+                </div>
+                
+                <p id="originalUrlOutput" class="original-url-hint"></p>
+                
+                <div class="result-meta-row">
+                  <span class="meta-tag" id="resultAliasTag">Random NanoID</span>
+                  <span class="meta-tag" id="resultExpiryTag">Permanent</span>
+                  <span class="meta-tag" id="resultDateTag">Just now</span>
+                </div>
+
+                <div class="result-actions-grid">
+                  <button class="btn btn-sm btn-secondary" onclick="testRedirect()">
+                    <span>🚀 Test Redirect (Track Click)</span>
+                  </button>
+                  <button class="btn btn-sm btn-outline" id="viewAnalyticsBtn">
+                    <span>📊 Open Analytics</span>
+                  </button>
+                  <button class="btn btn-sm btn-outline" onclick="downloadQRCode()">
+                    <span>📥 Download QR (.png)</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="result-right">
+                <div class="qr-preview-wrapper">
+                  <img id="qrCodeImg" alt="Link QR Code" />
+                  <span class="qr-caption">Scan to test on mobile</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <form id="shortenForm" class="shorten-form">
-          <div class="form-row">
-            <div class="input-group flex-1">
-              <label for="originalUrl">Destination Long URL *</label>
-              <input 
-                type="url" 
-                id="originalUrl" 
-                placeholder="https://example.com/very/long/deep/link/to/content" 
-                required 
-              />
-            </div>
+        <!-- System Architecture & FDE Mapping Grid -->
+        <div class="card arch-card">
+          <div class="card-header">
+            <div class="header-tag">PRODUCTION ARCHITECTURE</div>
+            <h2>Full-Stack System Design & Infographic Alignment</h2>
+            <p>Mapped directly to the 5 engineering infographics in your workspace:</p>
           </div>
-
-          <div class="form-row grid-2">
-            <div class="input-group">
-              <label for="customAlias">Custom Alias (Optional)</label>
-              <div class="alias-input-wrapper">
-                <span class="domain-prefix">shortly/</span>
-                <input 
-                  type="text" 
-                  id="customAlias" 
-                  placeholder="my-campaign" 
-                  pattern="[a-zA-Z0-9-_]+"
-                />
+          <div class="arch-grid">
+            <div class="arch-item">
+              <div class="arch-icon">🔐</div>
+              <div class="arch-info">
+                <span class="arch-badge">Infographic 5 • Projects #1 & #2</span>
+                <h4>Auth & URL Shortener Engine</h4>
+                <p>Combines Bcrypt salt hashing, JWT session claims, NanoID collision-proof keys, and automated link expiration state machines.</p>
               </div>
             </div>
 
-            <div class="input-group">
-              <label for="expiresInDays">Expires After (Days)</label>
-              <select id="expiresInDays">
-                <option value="">Never Expires (Permanent)</option>
-                <option value="1">1 Day</option>
-                <option value="7">7 Days</option>
-                <option value="30">30 Days</option>
-                <option value="90">90 Days</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="input-group flex-1">
-              <label for="urlTitle">Link Title (Optional)</label>
-              <input type="text" id="urlTitle" placeholder="e.g. Summer Portfolio Launch" />
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary btn-block" id="shortenSubmitBtn">
-            <span>⚡ Shorten URL</span>
-          </button>
-        </form>
-
-        <!-- Result Box (Hidden by default) -->
-        <div id="shortenResult" class="shorten-result hidden">
-          <div class="result-box">
-            <div class="result-details">
-              <span class="result-tag">Short Link Ready</span>
-              <a id="shortLinkOutput" href="#" target="_blank" class="short-url-link"></a>
-              <p id="originalUrlOutput" class="original-url-hint"></p>
-              
-              <div class="result-buttons">
-                <button class="btn btn-sm btn-secondary" onclick="copyShortLink()">📋 Copy Link</button>
-                <button class="btn btn-sm btn-outline" id="viewAnalyticsBtn">📊 View Analytics</button>
+            <div class="arch-item">
+              <div class="arch-icon">🍃</div>
+              <div class="arch-info">
+                <span class="arch-badge">Infographic 3 • MongoDB vs SQL</span>
+                <h4>Optimized Document Schema</h4>
+                <p>Compound indexes on <code>shortCode</code> and <code>user</code>, with capped subdocuments (<code>$slice: -500</code>) for sub-10ms queries.</p>
               </div>
             </div>
-            <div class="result-qr">
-              <img id="qrCodeImg" alt="QR Code" />
-              <span>Scan QR Code</span>
+
+            <div class="arch-item">
+              <div class="arch-icon">⚡</div>
+              <div class="arch-info">
+                <span class="arch-badge">Infographic 2 • 9 FDE Concepts</span>
+                <h4>Non-Blocking Telemetry Loop</h4>
+                <p>Immediate HTTP 302 client redirect; click tracking dispatched asynchronously via <code>setImmediate</code> to eliminate latency.</p>
+              </div>
+            </div>
+
+            <div class="arch-item">
+              <div class="arch-icon">🛡️</div>
+              <div class="arch-info">
+                <span class="arch-badge">Infographic 4 • AI Engineer Stack</span>
+                <h4>Security, Limits & Observability</h4>
+                <p>Equipped with Helmet security headers, Express Rate Limiter, Morgan structured logs, and real-time health checks at <code>/health</code>.</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Analytics Visualizer Section -->
-      <section id="analyticsSection" class="card analytics-card hidden">
-        <div class="card-header flex-between">
-          <div>
-            <h2>Real-Time Click Analytics</h2>
-            <p id="analyticsSubhead">Metrics for short link</p>
+      <!-- ================= TAB 2: REAL-TIME ANALYTICS ================= -->
+      <section id="tab-analytics" class="tab-pane">
+        <div class="card analytics-card">
+          <div class="card-header flex-between">
+            <div>
+              <div class="header-tag">TELEMETRY SUITE</div>
+              <h2>Real-Time Click Telemetry & Visualizer</h2>
+              <p id="analyticsSubhead">Inspect comprehensive traffic streams, device distributions, and geographic referrers.</p>
+            </div>
+            <div class="header-controls">
+              <div class="analytics-search-box">
+                <input type="text" id="analyticsCodeInput" placeholder="Enter short code..." />
+                <button class="btn btn-sm btn-primary" onclick="searchAnalyticsByInput()">Inspect</button>
+              </div>
+            </div>
           </div>
-          <button class="btn btn-sm btn-outline" onclick="closeAnalytics()">✕ Close</button>
-        </div>
 
-        <div class="metrics-grid">
-          <div class="metric-box">
-            <span class="metric-num" id="metricClicks">0</span>
-            <span class="metric-label">Total Clicks</span>
+          <!-- Quick Stats Counter Cards -->
+          <div class="metrics-grid">
+            <div class="metric-box">
+              <div class="metric-top">
+                <span class="metric-title">Total Clicks</span>
+                <span class="metric-badge-icon">🖱️</span>
+              </div>
+              <span class="metric-num" id="metricClicks">0</span>
+              <span class="metric-sub">Real-time engagement</span>
+            </div>
+
+            <div class="metric-box">
+              <div class="metric-top">
+                <span class="metric-title">Traffic Sources</span>
+                <span class="metric-badge-icon">🌐</span>
+              </div>
+              <span class="metric-num" id="metricReferrers">0</span>
+              <span class="metric-sub">Unique referrers</span>
+            </div>
+
+            <div class="metric-box">
+              <div class="metric-top">
+                <span class="metric-title">Client Browsers</span>
+                <span class="metric-badge-icon">💻</span>
+              </div>
+              <span class="metric-num" id="metricBrowsers">0</span>
+              <span class="metric-sub">Distinct user agents</span>
+            </div>
+
+            <div class="metric-box">
+              <div class="metric-top">
+                <span class="metric-title">Link Lifecycle</span>
+                <span class="metric-badge-icon">⏳</span>
+              </div>
+              <span class="metric-num text-emerald" id="metricStatus">Active</span>
+              <span class="metric-sub" id="metricExpiryDetails">No expiration set</span>
+            </div>
           </div>
-          <div class="metric-box">
-            <span class="metric-num" id="metricReferrers">0</span>
-            <span class="metric-label">Unique Referrers</span>
+
+          <!-- Charts Row (Chart.js visualizers) -->
+          <div class="charts-row">
+            <div class="chart-card flex-2">
+              <div class="chart-header">
+                <h3>📈 Clicks Timeline Trend</h3>
+                <span class="chart-hint">Daily click progression</span>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="timelineChart"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card flex-1">
+              <div class="chart-header">
+                <h3>🧭 Referrer Breakdown</h3>
+                <span class="chart-hint">Source origin</span>
+              </div>
+              <div class="chart-wrapper doughnut-wrapper">
+                <canvas id="referrerChart"></canvas>
+              </div>
+            </div>
           </div>
-          <div class="metric-box">
-            <span class="metric-num" id="metricBrowsers">0</span>
-            <span class="metric-label">Browsers Logged</span>
+
+          <!-- Breakdown & Recent Clicks Grid -->
+          <div class="breakdown-grid">
+            <div class="breakdown-col">
+              <div class="sub-header">
+                <h3>🖥️ Operating Systems & Devices</h3>
+              </div>
+              <div id="osList" class="stat-list">
+                <div class="empty-state-mini">Select or shorten a link to inspect devices</div>
+              </div>
+            </div>
+
+            <div class="breakdown-col">
+              <div class="sub-header">
+                <h3>🌐 Top Referrers</h3>
+              </div>
+              <div id="referrersList" class="stat-list">
+                <div class="empty-state-mini">No referrer data yet</div>
+              </div>
+            </div>
           </div>
-          <div class="metric-box">
-            <span class="metric-num" id="metricStatus">Active</span>
-            <span class="metric-label">Status</span>
+
+          <!-- Real-Time Click Stream Table -->
+          <div class="recent-clicks-box">
+            <div class="sub-header flex-between">
+              <h3>⚡ Live Ingestion Stream (Last 25 Events)</h3>
+              <button class="btn btn-sm btn-outline" onclick="refreshCurrentAnalytics()">🔄 Live Refresh</button>
+            </div>
+            <div class="table-responsive">
+              <table class="click-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Client IP</th>
+                    <th>Referrer Source</th>
+                    <th>Browser</th>
+                    <th>Platform / Device</th>
+                  </tr>
+                </thead>
+                <tbody id="clicksTableBody">
+                  <tr><td colspan="5" class="text-center py-4">No click events recorded yet. Open a short link to trigger the event listener!</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
+      </section>
 
-        <div class="breakdown-grid">
-          <div class="breakdown-col">
-            <h3>Top Referrers</h3>
-            <div id="referrersList" class="stat-list"></div>
+      <!-- ================= TAB 3: MY LINKS HUB ================= -->
+      <section id="tab-links" class="tab-pane">
+        <div class="card user-links-card">
+          <div class="card-header flex-between">
+            <div>
+              <div class="header-tag">CAMPAIGN MANAGEMENT</div>
+              <h2>My Shortened Links</h2>
+              <p>Search, monitor, analyze, and manage all your active and expired links.</p>
+            </div>
+            <div class="header-controls">
+              <button class="btn btn-sm btn-secondary" onclick="loadUserUrls()">🔄 Refresh</button>
+              <button class="btn btn-sm btn-primary" onclick="switchTab('shortener')">➕ New Link</button>
+            </div>
           </div>
-          <div class="breakdown-col">
-            <h3>Browsers & Devices</h3>
-            <div id="browsersList" class="stat-list"></div>
-          </div>
-        </div>
 
-        <div class="recent-clicks-box">
-          <h3>Recent Click Stream</h3>
+          <!-- Links Filter Toolbar -->
+          <div class="filter-toolbar">
+            <div class="search-input-wrapper">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="linkSearchInput" placeholder="Filter by title, slug, or destination..." oninput="filterUserLinks()" />
+            </div>
+            <div class="filter-pills">
+              <button class="filter-pill active" data-filter="all" onclick="setLinkFilter('all', this)">All</button>
+              <button class="filter-pill" data-filter="active" onclick="setLinkFilter('active', this)">Active</button>
+              <button class="filter-pill" data-filter="expired" onclick="setLinkFilter('expired', this)">Expired</button>
+            </div>
+          </div>
+
           <div class="table-responsive">
-            <table class="click-table">
+            <table class="links-table">
               <thead>
                 <tr>
-                  <th>Time</th>
-                  <th>IP Address</th>
-                  <th>Referrer</th>
-                  <th>Browser</th>
-                  <th>OS</th>
+                  <th>Campaign Title & Destination</th>
+                  <th>Short Link</th>
+                  <th>Clicks</th>
+                  <th>Status</th>
+                  <th>Created Date</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-              <tbody id="clicksTableBody">
-                <tr><td colspan="5" class="text-center">No clicks recorded yet.</td></tr>
+              <tbody id="userUrlsTableBody">
+                <tr><td colspan="6" class="text-center py-5">Please sign in to access your saved links and analytics dashboard.</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- User's Saved Links Table (for authenticated users) -->
-      <section id="userLinksSection" class="card user-links-card hidden">
-        <div class="card-header flex-between">
-          <div>
-            <h2>My Shortened Links</h2>
-            <p>Manage and monitor your active campaigns</p>
+      <!-- ================= TAB 4: API PLAYGROUND & DOCS ================= -->
+      <section id="tab-api-docs" class="tab-pane">
+        <div class="card api-docs-card">
+          <div class="card-header">
+            <div class="header-tag">DEVELOPER PLAYGROUND</div>
+            <h2>RESTful API Reference & Live Interactive Runner</h2>
+            <p>Directly test LinkPulse endpoints from your browser or copy production cURL commands.</p>
           </div>
-          <button class="btn btn-sm btn-outline" onclick="loadUserUrls()">🔄 Refresh</button>
-        </div>
-        <div class="table-responsive">
-          <table class="links-table">
-            <thead>
-              <tr>
-                <th>Title & Long URL</th>
-                <th>Short Link</th>
-                <th>Clicks</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="userUrlsTableBody">
-              <tr><td colspan="5" class="text-center">No links found.</td></tr>
-            </tbody>
-          </table>
+
+          <div class="endpoints-list">
+            <!-- Endpoint 1: Health -->
+            <div class="endpoint-item">
+              <div class="endpoint-header">
+                <span class="http-badge get">GET</span>
+                <code>/health</code>
+                <span class="endpoint-desc">System health check, uptime, and database telemetry</span>
+                <button class="btn btn-sm btn-outline test-btn" onclick="testApiEndpoint('/health', 'GET')">▶️ Run</button>
+              </div>
+              <pre class="code-snippet"><code>curl -X GET http://localhost:5000/health</code></pre>
+            </div>
+
+            <!-- Endpoint 2: Register -->
+            <div class="endpoint-item">
+              <div class="endpoint-header">
+                <span class="http-badge post">POST</span>
+                <code>/api/auth/register</code>
+                <span class="endpoint-desc">Register new user account with Bcrypt hash</span>
+              </div>
+              <pre class="code-snippet"><code>curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Srinath","email":"srinath@example.com","password":"StrongPassword123!"}'</code></pre>
+            </div>
+
+            <!-- Endpoint 3: Shorten -->
+            <div class="endpoint-item">
+              <div class="endpoint-header">
+                <span class="http-badge post">POST</span>
+                <code>/api/urls/shorten</code>
+                <span class="endpoint-desc">Create short URL (optional custom alias & expiration)</span>
+              </div>
+              <pre class="code-snippet"><code>curl -X POST http://localhost:5000/api/urls/shorten \
+  -H "Content-Type: application/json" \
+  -d '{"originalUrl":"https://github.com/Srinath64312","customAlias":"srinath-hub","title":"Portfolio"}'</code></pre>
+            </div>
+
+            <!-- Endpoint 4: Analytics -->
+            <div class="endpoint-item">
+              <div class="endpoint-header">
+                <span class="http-badge get">GET</span>
+                <code>/api/urls/:code/analytics</code>
+                <span class="endpoint-desc">Aggregate click counts, referrers, and device breakdown</span>
+              </div>
+              <pre class="code-snippet"><code>curl -X GET http://localhost:5000/api/urls/campus-market/analytics</code></pre>
+            </div>
+
+            <!-- Endpoint 5: Redirection -->
+            <div class="endpoint-item">
+              <div class="endpoint-header">
+                <span class="http-badge get">GET</span>
+                <code>/:code</code>
+                <span class="endpoint-desc">HTTP 302 Redirect to destination with async telemetry</span>
+              </div>
+              <pre class="code-snippet"><code>curl -I http://localhost:5000/campus-market</code></pre>
+            </div>
+          </div>
+
+          <!-- Interactive Response Console -->
+          <div class="api-console-box">
+            <div class="console-header flex-between">
+              <span class="console-title">🖥️ Interactive Live Response Console</span>
+              <button class="btn btn-sm btn-secondary" onclick="clearApiConsole()">Clear Console</button>
+            </div>
+            <pre id="apiConsoleOutput" class="console-output">// Click "Run" on an endpoint above to execute a live fetch call...</pre>
+          </div>
         </div>
       </section>
 
-      <!-- System Architecture & FDE Mapping Card -->
-      <section class="card arch-card">
-        <div class="card-header">
-          <h2>Architecture & Infographic Alignment</h2>
-          <p>How this backend maps directly to the 5 infographics in your workspace:</p>
-        </div>
-        <div class="arch-grid">
-          <div class="arch-item">
-            <span class="arch-badge">Infographic 5 • Projects #1 & #2</span>
-            <h4>Authentication & URL Shortener</h4>
-            <p>Combines secure JWT authentication with high-speed NanoID short links, custom aliases, and expiration state machines.</p>
-          </div>
-          <div class="arch-item">
-            <span class="arch-badge">Infographic 3 • MongoDB vs SQL</span>
-            <h4>Document-Based Schema</h4>
-            <p>Leverages MongoDB embedded subdocuments for high-throughput click analytics and compound index lookups on short codes.</p>
-          </div>
-          <div class="arch-item">
-            <span class="arch-badge">Infographic 2 • FDE Concepts</span>
-            <h4>Non-Blocking Telemetry</h4>
-            <p>Uses non-blocking asynchronous click event capture via <code>setImmediate</code> so HTTP 302 client redirects execute in &lt;10ms.</p>
-          </div>
-          <div class="arch-item">
-            <span class="arch-badge">Infographic 4 • Production Stack</span>
-            <h4>Security & Resilience</h4>
-            <p>Equipped with Helmet security headers, Express Rate Limiting, health checks at <code>/health</code>, and clean error handling.</p>
-          </div>
-        </div>
-      </section>
     </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-left">
+        <strong>LinkPulse</strong> • Production URL Shortener & Analytics Platform
+      </div>
+      <div class="footer-right">
+        <span>Architected by <a href="https://github.com/Srinath64312" target="_blank">Srinath</a></span>
+        <span class="sep">•</span>
+        <a href="https://github.com/Srinath64312/linkpulse-analytics-api" target="_blank">GitHub Repository</a>
+      </div>
+    </footer>
 
     <!-- Auth Modal -->
     <div id="authModal" class="modal hidden">
       <div class="modal-backdrop" onclick="closeAuthModal()"></div>
       <div class="modal-content">
         <div class="modal-header">
-          <h3 id="modalTitle">Sign In</h3>
+          <div>
+            <h3 id="modalTitle">Sign In</h3>
+            <p class="modal-sub" id="modalSub">Welcome back to LinkPulse</p>
+          </div>
           <button class="modal-close" onclick="closeAuthModal()">✕</button>
         </div>
         <form id="authForm" onsubmit="handleAuthSubmit(event)">
@@ -253,7 +528,9 @@
             <input type="password" id="authPassword" placeholder="••••••••" required />
           </div>
           <div id="authErrorMsg" class="error-banner hidden"></div>
-          <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">Sign In</button>
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="authSubmitBtn">
+            <span id="authBtnText">Sign In</span>
+          </button>
         </form>
         <div class="modal-footer">
           <span id="modalToggleText">Don't have an account?</span>
@@ -262,8 +539,27 @@
       </div>
     </div>
 
+    <!-- QR Code Modal (for zooming / inspecting) -->
+    <div id="qrModal" class="modal hidden">
+      <div class="modal-backdrop" onclick="closeQrModal()"></div>
+      <div class="modal-content modal-sm text-center">
+        <div class="modal-header">
+          <h3>QR Code</h3>
+          <button class="modal-close" onclick="closeQrModal()">✕</button>
+        </div>
+        <div class="qr-modal-body">
+          <img id="qrModalImg" alt="QR Preview" class="qr-modal-image" />
+          <p id="qrModalLinkText" class="qr-modal-link"></p>
+          <button class="btn btn-primary btn-block" onclick="downloadQRCode()">Download High-Res PNG</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Notification -->
-    <div id="toast" class="toast hidden"></div>
+    <div id="toast" class="toast hidden">
+      <span id="toastIcon">✨</span>
+      <span id="toastMsg">Notification message</span>
+    </div>
   </div>
 
   <script src="app.js"></script>
