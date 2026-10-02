@@ -1,7 +1,7 @@
 {
-  "name": "url-shortener-analytics-api",
+  "name": "linkpulse-analytics-api",
   "version": "1.0.0",
-  "description": "Production-grade URL Shortener & Analytics API with JWT Authentication and MongoDB",
+  "description": "Production-grade URL Shortener & Click Analytics API with JWT Authentication and MongoDB",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

@@ -1,4 +1,4 @@
-# Shortly • Production URL Shortener & Real-Time Analytics API
+# LinkPulse • Production URL Shortener & Real-Time Analytics API
 
 A high-performance, production-ready URL Shortener and Click Analytics platform built with **Node.js, Express, MongoDB (Mongoose), JWT Authentication, and NanoID**.
 
