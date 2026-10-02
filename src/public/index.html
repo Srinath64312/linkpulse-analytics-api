@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shortly • Production URL Shortener & Analytics API</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="navbar">
+      <div class="brand">
+        <span class="brand-icon">⚡</span>
+        <div class="brand-text">
+          <h1>Shortly<span class="badge">API v1.0</span></h1>
+          <p>Production URL Shortener & Real-Time Analytics</p>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <a href="/health" target="_blank" class="nav-btn health-badge" id="healthBtn">
+          <span class="status-dot"></span> System Health
+        </a>
+        <div id="authHeaderState">
+          <button class="nav-btn btn-secondary" onclick="openAuthModal('login')">Sign In</button>
+          <button class="nav-btn btn-primary" onclick="openAuthModal('register')">Sign Up</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="main-container">
+      <!-- Hero / Shortener Input Box -->
+      <section class="card shortener-card">
+        <div class="card-header">
+          <h2>Create Short Link</h2>
+          <p>Generate compact URLs with analytics tracking and QR codes.</p>
+        </div>
+
+        <form id="shortenForm" class="shorten-form">
+          <div class="form-row">
+            <div class="input-group flex-1">
+              <label for="originalUrl">Destination Long URL *</label>
+              <input 
+                type="url" 
+                id="originalUrl" 
+                placeholder="https://example.com/very/long/deep/link/to/content" 
+                required 
+              />
+            </div>
+          </div>
+
+          <div class="form-row grid-2">
+            <div class="input-group">
+              <label for="customAlias">Custom Alias (Optional)</label>
+              <div class="alias-input-wrapper">
+                <span class="domain-prefix">shortly/</span>
+                <input 
+                  type="text" 
+                  id="customAlias" 
+                  placeholder="my-campaign" 
+                  pattern="[a-zA-Z0-9-_]+"
+                />
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label for="expiresInDays">Expires After (Days)</label>
+              <select id="expiresInDays">
+                <option value="">Never Expires (Permanent)</option>
+                <option value="1">1 Day</option>
+                <option value="7">7 Days</option>
+                <option value="30">30 Days</option>
+                <option value="90">90 Days</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="input-group flex-1">
+              <label for="urlTitle">Link Title (Optional)</label>
+              <input type="text" id="urlTitle" placeholder="e.g. Summer Portfolio Launch" />
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" id="shortenSubmitBtn">
+            <span>⚡ Shorten URL</span>
+          </button>
+        </form>
+
+        <!-- Result Box (Hidden by default) -->
+        <div id="shortenResult" class="shorten-result hidden">
+          <div class="result-box">
+            <div class="result-details">
+              <span class="result-tag">Short Link Ready</span>
+              <a id="shortLinkOutput" href="#" target="_blank" class="short-url-link"></a>
+              <p id="originalUrlOutput" class="original-url-hint"></p>
+              
+              <div class="result-buttons">
+                <button class="btn btn-sm btn-secondary" onclick="copyShortLink()">📋 Copy Link</button>
+                <button class="btn btn-sm btn-outline" id="viewAnalyticsBtn">📊 View Analytics</button>
+              </div>
+            </div>
+            <div class="result-qr">
+              <img id="qrCodeImg" alt="QR Code" />
+              <span>Scan QR Code</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Analytics Visualizer Section -->
+      <section id="analyticsSection" class="card analytics-card hidden">
+        <div class="card-header flex-between">
+          <div>
+            <h2>Real-Time Click Analytics</h2>
+            <p id="analyticsSubhead">Metrics for short link</p>
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="closeAnalytics()">✕ Close</button>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-box">
+            <span class="metric-num" id="metricClicks">0</span>
+            <span class="metric-label">Total Clicks</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-num" id="metricReferrers">0</span>
+            <span class="metric-label">Unique Referrers</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-num" id="metricBrowsers">0</span>
+            <span class="metric-label">Browsers Logged</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-num" id="metricStatus">Active</span>
+            <span class="metric-label">Status</span>
+          </div>
+        </div>
+
+        <div class="breakdown-grid">
+          <div class="breakdown-col">
+            <h3>Top Referrers</h3>
+            <div id="referrersList" class="stat-list"></div>
+          </div>
+          <div class="breakdown-col">
+            <h3>Browsers & Devices</h3>
+            <div id="browsersList" class="stat-list"></div>
+          </div>
+        </div>
+
+        <div class="recent-clicks-box">
+          <h3>Recent Click Stream</h3>
+          <div class="table-responsive">
+            <table class="click-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>IP Address</th>
+                  <th>Referrer</th>
+                  <th>Browser</th>
+                  <th>OS</th>
+                </tr>
+              </thead>
+              <tbody id="clicksTableBody">
+                <tr><td colspan="5" class="text-center">No clicks recorded yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- User's Saved Links Table (for authenticated users) -->
+      <section id="userLinksSection" class="card user-links-card hidden">
+        <div class="card-header flex-between">
+          <div>
+            <h2>My Shortened Links</h2>
+            <p>Manage and monitor your active campaigns</p>
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="loadUserUrls()">🔄 Refresh</button>
+        </div>
+        <div class="table-responsive">
+          <table class="links-table">
+            <thead>
+              <tr>
+                <th>Title & Long URL</th>
+                <th>Short Link</th>
+                <th>Clicks</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="userUrlsTableBody">
+              <tr><td colspan="5" class="text-center">No links found.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- System Architecture & FDE Mapping Card -->
+      <section class="card arch-card">
+        <div class="card-header">
+          <h2>Architecture & Infographic Alignment</h2>
+          <p>How this backend maps directly to the 5 infographics in your workspace:</p>
+        </div>
+        <div class="arch-grid">
+          <div class="arch-item">
+            <span class="arch-badge">Infographic 5 • Projects #1 & #2</span>
+            <h4>Authentication & URL Shortener</h4>
+            <p>Combines secure JWT authentication with high-speed NanoID short links, custom aliases, and expiration state machines.</p>
+          </div>
+          <div class="arch-item">
+            <span class="arch-badge">Infographic 3 • MongoDB vs SQL</span>
+            <h4>Document-Based Schema</h4>
+            <p>Leverages MongoDB embedded subdocuments for high-throughput click analytics and compound index lookups on short codes.</p>
+          </div>
+          <div class="arch-item">
+            <span class="arch-badge">Infographic 2 • FDE Concepts</span>
+            <h4>Non-Blocking Telemetry</h4>
+            <p>Uses non-blocking asynchronous click event capture via <code>setImmediate</code> so HTTP 302 client redirects execute in &lt;10ms.</p>
+          </div>
+          <div class="arch-item">
+            <span class="arch-badge">Infographic 4 • Production Stack</span>
+            <h4>Security & Resilience</h4>
+            <p>Equipped with Helmet security headers, Express Rate Limiting, health checks at <code>/health</code>, and clean error handling.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal hidden">
+      <div class="modal-backdrop" onclick="closeAuthModal()"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modalTitle">Sign In</h3>
+          <button class="modal-close" onclick="closeAuthModal()">✕</button>
+        </div>
+        <form id="authForm" onsubmit="handleAuthSubmit(event)">
+          <div class="input-group" id="nameGroup">
+            <label for="authName">Full Name</label>
+            <input type="text" id="authName" placeholder="Srinath" />
+          </div>
+          <div class="input-group">
+            <label for="authEmail">Email Address</label>
+            <input type="email" id="authEmail" placeholder="srinath@example.com" required />
+          </div>
+          <div class="input-group">
+            <label for="authPassword">Password</label>
+            <input type="password" id="authPassword" placeholder="••••••••" required />
+          </div>
+          <div id="authErrorMsg" class="error-banner hidden"></div>
+          <button type="submit" class="btn btn-primary btn-block" id="authSubmitBtn">Sign In</button>
+        </form>
+        <div class="modal-footer">
+          <span id="modalToggleText">Don't have an account?</span>
+          <button type="button" class="btn-link" id="modalToggleBtn" onclick="toggleAuthMode()">Sign Up</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
