@@ -53,8 +53,8 @@ This project implements **Project #2 (URL Shortener API)** and **Project #1 (Aut
 
 ### 2. Installation
 ```bash
-git clone https://github.com/Srinath64312/url-shortener-analytics-api.git
-cd url-shortener-analytics-api
+git clone https://github.com/Srinath64312/linkpulse-analytics-api.git
+cd linkpulse-analytics-api
 npm install
 ```
 
